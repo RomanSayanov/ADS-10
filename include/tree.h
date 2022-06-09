@@ -1,56 +1,68 @@
 // Copyright 2022 NNTU-CS
 #ifndef INCLUDE_TREE_H_
 #define INCLUDE_TREE_H_
-
-#endif  // INCLUDE_TREE_H_
+#include <algorithm>
 #include <vector>
-#include <iostream>
 #include <string>
+
+struct Node {
+    char symbol;
+    Node *parent;
+    std::vector<Node> variants;
+};
 
 class Tree {
  private:
-    struct Node {
-        std::vector<Node*> point;
-        char value;
-    };
-    Node* root;
-    std::vector <char> values;
-    std::string elem;
-    std::vector<char> transf;
-    std::vector<std::vector<char>> res;
+    Node *root = new Node;
+    std::vector<Node> permutations;
+    void makeTree(std::vector<char> array) {
+        createNode(root, array);
+        link(root);
+    }
+    void createNode(Node* head, std::vector<char> array) {
+        for (int i = 0; i < array.size(); i++) {
+            Node *elem = new Node();
+            elem->symbol = array[i];
+            head->variants.push_back(*elem);
+            if (array.size() > 0) {
+                createNode(&head->variants[i], expectArray(array, array[i]));
+            }
+        }
+    }
+    void link(Node *head) {
+        for (Node &child : head->variants) {
+            child.parent = head;
+            link(&child);
+        }
+        if (head->variants.size() == 0) {
+            permutations.push_back(*head);
+        }
+    }
+    std::vector<char> expectArray(std::vector<char> array, char value) {
+        std::vector<char>::iterator position = std::find(array.begin(),
+                                                         array.end(), value);
+        if (position != array.end())
+            array.erase(position);
+        return array;
+    }
+
  public:
-    explicit Tree(std::vector <char> in) {
-        values = in;
-        elem.resize(in.size());
-        transf.resize(in.size());
-        Node* root = new Node;
-        root->value = '*';
-        transformm(in, -1, 0, root);
+    explicit Tree(std::vector<char> array) {
+        makeTree(array);
     }
-    Node* createNode(char value) {
-        Node* temp = new Node;
-        temp->value = value;
-        return temp;
-    }
-    void transformm(std::vector<char> in, int k, int num, Node* root) {
-        if (in.size() == 1) {
-            res.push_back(transf);
-            return;
+    std::vector<char> getPermutationByNumber(Tree tree, int number){
+        if (number > permutations.size()) {
+            return {};
         }
-        auto iter = in.cbegin();
-        if (k >= 0) {
-            num++;
-            in.erase(iter + k);
+        std::vector<char> result;
+        Node current = permutations[number-1];
+        while (current.parent) {
+            result.push_back(current.symbol);
+            current = *current.parent;
         }
-        for (int i = 0; i < in.size(); i++) {
-            root->point.push_back(createNode(in[i]));
-            transf[num] = in[i];
-            transformm(in, i, num, root->point[i]);
-        }
-    }
-    std::vector<char> getPerm(Tree tree, int num) {
-        if (num > res.size()) return {};
-        return res[num - 1];
+        std::reverse(result.begin(), result.end());
+        return result;
     }
 };
-#pragma once
+
+#endif  // INCLUDE_TREE_H_
